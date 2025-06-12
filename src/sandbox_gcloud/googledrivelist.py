@@ -7,6 +7,7 @@ import csv
 import sys
 import os
 import pickle
+import argparse
 
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 TOKEN_PICKLE_FILE = 'token.pickle'
@@ -33,7 +34,28 @@ def get_credentials():
     
     return creds
 
+def get_basic_permission(service, file_id):
+    """ファイルの基本的なアクセス権を取得"""
+    try:
+        file = service.files().get(
+            fileId=file_id,
+            fields='capabilities(canEdit,canComment)'
+        ).execute()
+        
+        capabilities = file.get('capabilities', {})
+        if capabilities.get('canEdit'):
+            return '編集者'
+        elif capabilities.get('canComment'):
+            return '閲覧者（コメント可）'
+        else:
+            return '閲覧者'
+    except Exception as e:
+        return '不明'
+
 def main():
+    parser = argparse.ArgumentParser(description='Google Driveの共有ファイル一覧を取得')
+    args = parser.parse_args()
+
     creds = get_credentials()
     service = build('drive', 'v3', credentials=creds)
 
@@ -43,7 +65,7 @@ def main():
     ).execute()
 
     # CSVヘッダーを定義
-    fieldnames = ['ファイル名', 'ID', 'オーナー名', 'オーナーメールアドレス', 'オーナー組織', '共有者名', '共有者メールアドレス', '共有者組織', '作成日']
+    fieldnames = ['ファイル名', 'ID', 'オーナー名', 'オーナーメールアドレス', '共有者名', '共有者メールアドレス', 'アクセス権', '作成日']
 
     # CSVファイルに書き込み
     writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
@@ -56,23 +78,23 @@ def main():
         owner = f.get('owners', [{}])[0] if f.get('owners') else {}
         owner_name = owner.get('displayName', '不明')
         owner_email = owner.get('emailAddress', '不明')
-        owner_org = owner.get('organizations', [{}])[0].get('name', '不明') if owner.get('organizations') else '不明'
         
         # 共有者情報の取得
         sharing_user = f.get('sharingUser', {})
         sharing_name = sharing_user.get('displayName', '不明')
         sharing_email = sharing_user.get('emailAddress', '不明')
-        sharing_org = sharing_user.get('organizations', [{}])[0].get('name', '不明') if sharing_user.get('organizations') else '不明'
+        
+        # アクセス権情報の取得
+        access_rights = get_basic_permission(service, f['id'])
         
         writer.writerow({
             'ファイル名': f['name'],
             'ID': f['id'],
             'オーナー名': owner_name,
             'オーナーメールアドレス': owner_email,
-            'オーナー組織': owner_org,
             '共有者名': sharing_name,
             '共有者メールアドレス': sharing_email,
-            '共有者組織': sharing_org,
+            'アクセス権': access_rights,
             '作成日': created_time.strftime('%Y-%m-%d %H:%M:%S')
         })
 
