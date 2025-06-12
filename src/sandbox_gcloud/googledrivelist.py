@@ -61,11 +61,11 @@ def main():
 
     results = service.files().list(
         q="sharedWithMe",
-        fields="files(id, name, mimeType, owners, createdTime, shared, sharingUser)"
+        fields="files(id, name, mimeType, owners, createdTime, shared, sharingUser, webViewLink)"
     ).execute()
 
     # CSVヘッダーを定義
-    fieldnames = ['ファイル名', 'ID', 'オーナー名', 'オーナーメールアドレス', '共有者名', '共有者メールアドレス', 'アクセス権', '作成日']
+    fieldnames = ['ファイル名', 'ID', 'オーナー名', 'オーナーメールアドレス', '共有者名', '共有者メールアドレス', 'アクセス権', '作成日', '共有リンク']
 
     # CSVファイルに書き込み
     writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
@@ -95,7 +95,8 @@ def main():
             '共有者名': sharing_name,
             '共有者メールアドレス': sharing_email,
             'アクセス権': access_rights,
-            '作成日': created_time.strftime('%Y-%m-%d %H:%M:%S')
+            '作成日': created_time.strftime('%Y-%m-%d %H:%M:%S'),
+            '共有リンク': f.get('webViewLink', '不明')
         })
 
 if __name__ == '__main__':
