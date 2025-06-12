@@ -1,0 +1,28 @@
+[project]
+name = "sandbox-gcloud"
+version = "0.1.0"
+description = "Google Cloud Platform の機能を試すためのサンドボックスプロジェクト"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "kikudai"}
+]
+dependencies = [
+    "google-api-python-client",
+    "google-auth-httplib2",
+    "google-auth-oauthlib",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I"]
